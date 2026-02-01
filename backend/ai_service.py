@@ -18,7 +18,7 @@ def classify_and_generate_response(email_text: str) -> dict:
         "inputs": email_text,
         "parameters": {
             "candidate_labels": list(LABELS.values())
-        }
+        },
         "options": {
             "wait_for_model": True
         }
