@@ -13,7 +13,7 @@ app = FastAPI(title="Email Classifier API")
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["https://classificador-de-email-production.up.railway.app"],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
