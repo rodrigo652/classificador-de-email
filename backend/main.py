@@ -10,9 +10,9 @@ from nlp import preprocess_text
 from ai_service import classify_and_generate_response
 from fastapi.staticfiles import StaticFiles
 
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
-
 app = FastAPI(title="Email Classifier API")
+
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 app.add_middleware(
     CORSMiddleware,
