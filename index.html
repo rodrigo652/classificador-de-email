@@ -91,6 +91,8 @@
 <script>
 let modo = "texto";
 
+const API_BASE = "https://seu-backend.up.railway.app";
+
 function modoTexto() {
   modo = "texto";
   areaTexto.classList.remove("d-none");
@@ -118,7 +120,7 @@ async function analisarEmail() {
     const texto = emailInput.value;
     if (!texto.trim()) return resetBotao();
 
-    response = await fetch("http://localhost:8000/classify", {
+    response = await fetch(`${API_BASE}/classify`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ content: texto })
@@ -130,7 +132,7 @@ async function analisarEmail() {
     const formData = new FormData();
     formData.append("file", file);
 
-    response = await fetch("http://localhost:8000/classify-file", {
+    response = await fetch(`${API_BASE}/classify-file`, {
       method: "POST",
       body: formData
     });
@@ -161,7 +163,7 @@ function atualizarResultado(data) {
 }
 
 async function carregarHistorico() {
-  const response = await fetch("http://localhost:8000/history");
+  const response = await fetch(`${API_BASE}/history`);
   const data = await response.json();
 
   historico.innerHTML = "";
@@ -209,7 +211,7 @@ async function enviarFeedback(tipo, motivo = null) {
       ? "Produtivo"
       : "Improdutivo";
 
-  await fetch("http://localhost:8000/feedback", {
+  await fetch(`${API_BASE}/feedback`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
