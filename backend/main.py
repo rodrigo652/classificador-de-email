@@ -12,6 +12,10 @@ from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(title="Email Classifier API")
 
+@app.get("/")
+def main_index():
+    return RedirectResponse(url="/static/index.html")
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
