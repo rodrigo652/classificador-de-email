@@ -30,7 +30,6 @@ def classify_and_generate_response(email_text: str) -> dict:
 
     result = response.json()
 
-    # 🔁 Mapeia descrição → rótulo final
     label_descricao = result["labels"][0]
     classificacao = next(
         k for k, v in LABELS.items() if v == label_descricao
