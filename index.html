@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <title>Classificador Inteligente de Emails</title>
+
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+
+  <style>
+    body { background: #f5f7fa; }
+    .card { border-radius: 12px; }
+    textarea { resize: none; }
+  </style>
+</head>
+
+<body>
+
+<div class="container my-5">
+
+  <!-- HEADER -->
+  <div class="mb-4">
+    <h3>📧 Classificador Inteligente de Emails</h3>
+    <p class="text-muted mb-1">
+      Automatize a leitura, classificação e resposta de emails corporativos.
+    </p>
+    <span class="badge bg-primary">
+      📊 Hoje já classificamos <strong id="contadorEmails">0</strong> emails automaticamente
+    </span>
+  </div>
+
+  <!-- FORM -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+
+      <ul class="nav nav-tabs mb-3">
+        <li class="nav-item">
+          <button class="nav-link active" id="tabTexto" onclick="modoTexto()">Colar Texto</button>
+        </li>
+        <li class="nav-item">
+          <button class="nav-link" id="tabArquivo" onclick="modoArquivo()">Upload (.txt / .pdf)</button>
+        </li>
+      </ul>
+
+      <div id="areaTexto">
+        <textarea id="emailInput" class="form-control mb-3" rows="6"
+          placeholder="Cole o conteúdo do email aqui..."></textarea>
+      </div>
+
+      <div id="areaArquivo" class="d-none">
+        <input type="file" id="fileInput" class="form-control mb-3" accept=".txt,.pdf" />
+      </div>
+
+      <button id="btnAnalisar" class="btn btn-primary w-100" onclick="analisarEmail()">
+        Analisar Email
+      </button>
+
+      <div id="tempoProcessamento" class="text-center text-muted mt-2"></div>
+    </div>
+  </div>
+
+  <!-- RESULTADO -->
+  <div class="card shadow-sm mb-4">
+    <div class="card-body">
+      <h5>Resultado da Análise</h5>
+      <span id="badgeClassificacao" class="badge bg-secondary mb-3">—</span>
+
+      <h6>Resposta Sugerida (editável)</h6>
+      <textarea id="respostaSugerida" class="form-control mb-3" rows="4"></textarea>
+
+      <div class="d-flex gap-2">
+        <button class="btn btn-outline-secondary" onclick="copiarResposta()">📋 Copiar resposta</button>
+        <button class="btn btn-outline-success" onclick="feedbackCorreto()">👍 Correta</button>
+        <button class="btn btn-outline-danger" onclick="feedbackIncorreto()">👎 Incorreta</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- HISTÓRICO -->
+  <div class="card shadow-sm">
+    <div class="card-body">
+      <h5 class="mb-3">🔄 Histórico recente</h5>
+      <ul id="historico" class="list-group"></ul>
+    </div>
+  </div>
+
+</div>
+
+<script>
+let modo = "texto";
+
+function modoTexto() {
+  modo = "texto";
+  areaTexto.classList.remove("d-none");
+  areaArquivo.classList.add("d-none");
+  tabTexto.classList.add("active");
+  tabArquivo.classList.remove("active");
+}
+
+function modoArquivo() {
+  modo = "arquivo";
+  areaTexto.classList.add("d-none");
+  areaArquivo.classList.remove("d-none");
+  tabTexto.classList.remove("active");
+  tabArquivo.classList.add("active");
+}
+
+async function analisarEmail() {
+  const btn = btnAnalisar;
+  btn.disabled = true;
+  btn.innerText = "⏳ Analisando...";
+
+  let response;
+
+  if (modo === "texto") {
+    const texto = emailInput.value;
+    if (!texto.trim()) return resetBotao();
+
+    response = await fetch("http://localhost:8000/classify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ content: texto })
+    });
+  } else {
+    const file = fileInput.files[0];
+    if (!file) return resetBotao();
+
+    const formData = new FormData();
+    formData.append("file", file);
+
+    response = await fetch("http://localhost:8000/classify-file", {
+      method: "POST",
+      body: formData
+    });
+  }
+
+  const data = await response.json();
+  atualizarResultado(data);
+  carregarHistorico();
+
+  contadorEmails.innerText =
+    parseInt(contadorEmails.innerText) + 1;
+
+  tempoProcessamento.innerHTML =
+    `⏱️ Análise concluída em <strong>${data.tempo_processamento}s</strong>`;
+
+  resetBotao();
+}
+
+function atualizarResultado(data) {
+  badgeClassificacao.className =
+    "badge mb-3 " +
+    (data.classificacao === "Produtivo" ? "bg-success" : "bg-secondary");
+
+  badgeClassificacao.innerText =
+    data.classificacao === "Produtivo" ? "🟢 Produtivo" : "⚪ Improdutivo";
+
+  respostaSugerida.value = data.resposta_sugerida;
+}
+
+async function carregarHistorico() {
+  const response = await fetch("http://localhost:8000/history");
+  const data = await response.json();
+
+  historico.innerHTML = "";
+
+  if (data.length === 0) {
+    historico.innerHTML =
+      `<li class="list-group-item text-muted">Nenhum email analisado ainda.</li>`;
+    return;
+  }
+
+  data.forEach(item => {
+    const li = document.createElement("li");
+    li.className = "list-group-item d-flex justify-content-between";
+    li.innerHTML = `
+      <span>Email analisado</span>
+      <span class="badge ${item.classificacao === "Produtivo" ? "bg-success" : "bg-secondary"}">
+        ${item.classificacao}
+      </span>`;
+    historico.appendChild(li);
+  });
+}
+
+function copiarResposta() {
+  respostaSugerida.select();
+  document.execCommand("copy");
+  alert("Resposta copiada!");
+}
+
+async function feedbackCorreto() {
+  await enviarFeedback("correto");
+  alert("👍 Obrigado! Feedback enviado.");
+}
+
+async function feedbackIncorreto() {
+  const motivo = prompt("O que estava incorreto?");
+  if (!motivo) return;
+
+  await enviarFeedback("incorreto", motivo);
+  alert("👎 Feedback enviado. Obrigado!");
+}
+
+async function enviarFeedback(tipo, motivo = null) {
+  const classificacao =
+    document.getElementById("badgeClassificacao").innerText.includes("Produtivo")
+      ? "Produtivo"
+      : "Improdutivo";
+
+  await fetch("http://localhost:8000/feedback", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({
+      classificacao,
+      feedback: tipo,
+      motivo
+    })
+  });
+}
+
+function resetBotao() {
+  btnAnalisar.disabled = false;
+  btnAnalisar.innerText = "Analisar Email";
+}
+
+window.onload = carregarHistorico;
+</script>
+
+</body>
+</html>
