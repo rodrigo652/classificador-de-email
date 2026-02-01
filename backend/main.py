@@ -12,8 +12,6 @@ from fastapi.staticfiles import StaticFiles
 
 app = FastAPI(title="Email Classifier API")
 
-app.mount("/", StaticFiles(directory="static", html=True), name="static")
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -21,6 +19,8 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.mount("/static", StaticFiles(directory="static", html=True), name="static")
 
 historico_emails = []
 historico = []
