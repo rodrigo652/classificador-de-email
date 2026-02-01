@@ -1,26 +1,17 @@
-import nltk
-import string
-
-from nltk.corpus import stopwords
-from nltk.stem import RSLPStemmer
-
-nltk.download('stopwords')
-nltk.download('rslp')
-
-stop_words = set(stopwords.words('portuguese'))
-stemmer = RSLPStemmer()
+import re
+import unicodedata
 
 def preprocess_text(text: str) -> str:
+    if not text:
+        return ""
+
+    text = unicodedata.normalize("NFKD", text)
+    text = "".join(c for c in text if not unicodedata.combining(c))
+
     text = text.lower()
 
-    text = text.translate(str.maketrans('', '', string.punctuation))
+    text = re.sub(r"[^\w\s.,!?]", "", text)
 
-    words = text.split()
+    text = re.sub(r"\s+", " ", text)
 
-    processed_words = [
-        stemmer.stem(word)
-        for word in words
-        if word not in stop_words
-    ]
-
-    return " ".join(processed_words)
+    return text.strip()
