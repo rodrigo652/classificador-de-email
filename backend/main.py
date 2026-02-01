@@ -9,11 +9,12 @@ from models import EmailRequest, EmailResponse
 from nlp import preprocess_text
 from ai_service import classify_and_generate_response
 from fastapi.staticfiles import StaticFiles
+from fastapi.responses import RedirectResponse
 
 app = FastAPI(title="Email Classifier API")
 
 @app.get("/")
-def main_index():
+async def main_index():
     return RedirectResponse(url="/static/index.html")
 
 app.add_middleware(
